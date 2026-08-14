@@ -1,19 +1,23 @@
 "use client"
 import Image from "next/image";
 import { useState } from "react";
-import { getAttractionsFor } from "@/lib/mockAttractions";
+import { getAttractionsFor, type Attraction } from "@/lib/mockAttractions";
+import { getInsightsFor, type PlaceInsights } from "@/lib/mockInsights";
 import { motion } from "motion/react";
+import Navigation from "@/components/Nav";
 
 export default function Home() {
 
   //current text typed in search box
   const [ query, setQuery ] = useState("");
   //list of attractions found, or null if no search yet
-  const [ results, setResults ] = useState<string[] | null>(null);
+  const [ results, setResults ] = useState<Attraction[] | null>(null);
   //the place name that was actually searched
   const [ searchedPlace, setSearchedPlace ] = useState("");
   //validation msg shown when search is attempted with empty input
   const [ error, setError ] = useState("");
+  //quick facts about the searched place
+  const [ insights, setInsights ] = useState<PlaceInsights | null>(null);
 
   //for searching attractions
   function handleSearch() {
@@ -28,6 +32,7 @@ export default function Home() {
     setError("");
     setSearchedPlace(trimmed);
     setResults(getAttractionsFor(trimmed));
+    setInsights(getInsightsFor(trimmed));
   }
 
   //clear page
@@ -37,10 +42,13 @@ export default function Home() {
     setResults(null);
     setSearchedPlace("");
     setError("");
+    setInsights(null);
+
   }
 
   return (
     <>
+      <Navigation />
       <main className="min-h-screen flex flex-col items-center justify-center px-6 py-20">
         <div className="w-full max-w-lg text-center">
           <motion.p 
@@ -75,14 +83,14 @@ export default function Home() {
             <div className="flex items-center justify-between gap-2">
               <button
                 onClick={handleSearch}
-                className="cursor-pointer bg-sunset text-white px-7 py-2 rounded-full font-medium hover:brightness-95 active:scale-[0.98] transition"
+                className="cursor-pointer bg-sunset text-white px-7 py-2 rounded-full font-medium hover:shadow-md hover:brightness-95 active:scale-[0.98] transition"
                 >
                 Check Attractions
               </button>
 
               <button
                 onClick={handleClear}
-                className="cursor-pointer bg-emerald-500 text-white px-7 py-2 rounded-full font-medium hover:brightness-95 active:scale-[0.98] transition"
+                className="cursor-pointer bg-emerald-500 text-white px-7 py-2 rounded-full font-medium hover:shadow-sm hover:brightness-95 active:scale-[0.98] transition"
                 >
                 Clear Search
               </button>
@@ -93,13 +101,35 @@ export default function Home() {
             <p className="text-sm text-sunset mt-3">{error}</p>
           )}
 
-          {results && (
+          {insights && (
             <motion.div
-              key={searchedPlace} 
-              initial={{ opacity: 0, y: 10 }}
+              key={`insights-${searchedPlace}`}
+              initial={{ opacity: 0, y: 14 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.1 }}
-              className="mt-14 text-left">
+              className="cursor-pointer bg-white border border-mist rounded-xl px-5 py-4 mt-4 hover:shadow-md hover:border-horizon hover:scale-[1.01] space-y-2 text-sm">
+              <p>
+                <span className="text-horizon font-medium">Best time to visit:</span>{" "}
+                {insights.bestMonths}
+              </p>
+              <p>
+                <span className="text-horizon font-medium">Popular food:</span>{" "}
+                {insights.popularFood.join(", ")}
+              </p>
+              <p>
+                <span className="text-horizon font-medium">Busiest period:</span>{" "}
+                {insights.busiestTime}
+              </p>
+            </motion.div>
+          )}
+
+          {results && (
+            <motion.div
+              key={`results-${searchedPlace}`} 
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.7, delay: 0.2 }}
+              className="mt-10 text-left">
               <h2 className="font-display text-lg mb-5">
                   Top spots in <span className="text-horizon">{searchedPlace}</span>
               </h2>
@@ -107,10 +137,11 @@ export default function Home() {
               {results.length > 0 ? (
                 <ul className="relative border-l-2 border-dotted border-mist pl-5.5 space-y-4">
                   {results.map((attraction) => (
-                    <li key={attraction} className="relative">
+                    <li key={attraction.name} className="relative">
                       <span className="absolute -left-[27px] top-1.5 w-2.5 h-2.5 rounded-full bg-horizon" />
                       <div className="max-w-xs bg-gray-50 border border-mist rounded-xl px-4 py-3 shadow-sm hover:shadow-sm transition">
-                        {attraction}
+                        <p className="font-medium">{attraction.name}</p>
+                        <p className="text-sm text-ink/70 mt-2">{attraction.description}</p>
                       </div>
                     </li>
                   ))}

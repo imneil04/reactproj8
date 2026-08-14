@@ -172,7 +172,7 @@ export default function FaqWidget() {
             <button
                 onClick={() => setOpen((v) => !v)}
                 aria-label={open ? "Close FAQ" : "Open FAQ"}
-                className="w-14 h-14 rounded-full bg-emerald-600 text-white text-2xl shadow-lg hover:bg-emerald-700 transition-colors"
+                className="cursor-pointer w-14 h-14 rounded-full bg-emerald-600 text-white text-2xl shadow-lg hover:bg-emerald-700 transition-colors"
             >
                 {open ? "×" : "?"}
             </button>

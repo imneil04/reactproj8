@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import FaqWidget from "@/components/FaqWidget";
+import Footer from "@/components/Footer";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -26,8 +27,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col font-body bg-paper text-ink antialised">
-        {children}
+        <main className="flex-1">{children}</main>
         <FaqWidget />
+        <Footer />
       </body>
     </html>
   );
