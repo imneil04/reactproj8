@@ -1,7 +1,9 @@
 "use client"
+
 import Link from "next/link";
 import { useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
+import { signup } from "./actions";
 
 export default function SignupPage() {
 
@@ -17,21 +19,35 @@ export default function SignupPage() {
       </p>
 
       <div className="mt-3 rounded-3xl border border-black/10 bg-white/30 p-6 backdrop-blur-md shadow-sm">
-        <form className="mt-8 flex flex-col gap-3">
+        <form action={signup} className="mt-8 flex flex-col gap-3">
+
           <input
             type="text"
+            name="fullName"
             placeholder="Name"
+            disabled
             className="rounded-full border border-black/10 px-4 py-3 text-sm placeholder:text-black/40"
           />
           <input
             type="email"
+            name="email"
             placeholder="Email"
+            disabled
+            className="rounded-full border border-black/10 px-4 py-3 text-sm placeholder:text-black/40"
+          />
+          <input 
+            type="tel"
+            name="phone"
+            placeholder="Phone Number"
+            disabled
             className="rounded-full border border-black/10 px-4 py-3 text-sm placeholder:text-black/40"
           />
              <div className="relative">
                 <input
                     type={showPassword ? "text" : "password"}
+                    name="password"
                     placeholder="Password"
+                    disabled
                     className="w-full rounded-full border border-black/10 px-4 py-3 text-sm placeholder:text-black/40"
                 />
                 <button
@@ -45,7 +61,8 @@ export default function SignupPage() {
               </div>
 
           <button
-            type="button"
+            type="submit"
+            disabled
             className="mt-2 rounded-full bg-[var(--color-ink,#1a1a1a)] px-4 py-3 text-sm font-medium text-white opacity-50"
           >
             Sign up

@@ -64,7 +64,7 @@ export default function Home() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.1 }}
             className="font-display text-4xl sm:text-5xl font-medium leading-tight mb-10">
-            Find what's worth seeing
+            Find what&apos;s worth seeing
           </motion.h1>
 
           <motion.div 
