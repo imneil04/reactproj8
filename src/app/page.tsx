@@ -5,6 +5,7 @@ import { getAttractionsFor, type Attraction } from "@/lib/mockAttractions";
 import { getInsightsFor, type PlaceInsights } from "@/lib/mockInsights";
 import { motion } from "motion/react";
 import Navigation from "@/components/Nav";
+import NoticeBanner from "./NoticeBannerHome";
 
 export default function Home() {
 
@@ -50,13 +51,14 @@ export default function Home() {
     <>
       <Navigation />
       <main className="min-h-screen flex flex-col items-center justify-center px-6 py-20">
+        <NoticeBanner />
         <div className="w-full max-w-lg text-center">
           <motion.p 
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
             className="text-xs tracking-[0.3em] uppercase text-horizon mb-3">
-            Waypoint
+            <span>placeholder</span>
           </motion.p>
 
           <motion.h1 

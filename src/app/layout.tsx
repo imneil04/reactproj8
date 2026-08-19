@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Waypoint - Find what's worth seeing",
+  title: "Placeholder - Find what's worth seeing",
   description: "Search any place and discover its top attractions.",
 };
 

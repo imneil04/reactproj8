@@ -84,11 +84,15 @@ export default function LoginPage() {
         Log in
       </h1>
       <p className="mt-2 text-sm text-black/60">
-        Welcome back to <Link href="/" className="text-ink/80 font-medium tracking-light">Waypoint</Link>.
+        Welcome back to <Link href="/" className="text-ink/80 font-medium tracking-light">Placeholder</Link>.
       </p>
 
-      <div className="mt-3 rounded-3xl border border-black/10 bg-white/30 p-6 backdrop-blur-md shadow-sm">
-        
+      <motion.div 
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.1 }}
+        className="mt-3 rounded-3xl border border-black/10 bg-white/30 p-6 backdrop-blur-md shadow-sm">
+        {/**main login form fields */}
         <form action={formAction} onSubmit={handleSubmit} className="mt-8 flex flex-col gap-3">
 
             <AnimatePresence mode="wait">
@@ -146,8 +150,8 @@ export default function LoginPage() {
               {isPending ? <Loader2 size={18} className="animate-spin" /> : "Log in"}
             </button>
         </form>
-      </div>
-
+      </motion.div>
+      {/**signup navigate link */}
       <p className="mt-6 text-sm text-black/60">
         Don&apos;t have an account?{" "}
         <Link href="/signup" className="underline underline-offset-2">
