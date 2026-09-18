@@ -16,8 +16,22 @@ export default function LoginPage() {
     const [ state, formAction, isPending ] = useActionState(login, initialState);
     const router = useRouter();
     const [ validationError, setValidationError ] = useState<string | null>(null);
+    
+    //const searchParams = useSearchParams();
+    //const [ showLogoutMessage, setShowLogoutMessage ] = useState(false);
+
+    //refractor old way to show logout msg to avoid double re-renders of page
     const searchParams = useSearchParams();
-    const [ showLogoutMessage, setShowLogoutMessage ] = useState(false);
+    const [ showLogoutMessage, setShowLogoutMessage ] = useState(
+      () => searchParams.get("logout") === "success"
+    );
+
+    useEffect(() => {
+      if (showLogoutMessage) {
+        router.replace("/login");
+      }
+    }, [showLogoutMessage, router]);
+
 
     //to consolidate three separate conditions into single derived "message"
     //priority order, so only one msg banner at a time can be rendered
@@ -57,14 +71,15 @@ export default function LoginPage() {
       setShowLogoutMessage(false);
     }
 
+    
     //for logout
-    useEffect(() => {
+    /*useEffect(() => {
       if (searchParams.get("logout") === "success") {
         setShowLogoutMessage(true);
         router.replace("/login");
 
       }
-    }, [searchParams, router]);
+    }, [searchParams, router]);  */
 
     //to ensure proper flow in redirect
     useEffect(() => {

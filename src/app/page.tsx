@@ -3,9 +3,10 @@ import Image from "next/image";
 import { useState } from "react";
 import { getAttractionsFor, type Attraction } from "@/lib/mockAttractions";
 import { getInsightsFor, type PlaceInsights } from "@/lib/mockInsights";
-import { motion } from "motion/react";
+import { AnimatePresence, motion } from "motion/react";
 import Navigation from "@/components/Nav";
 import NoticeBanner from "./NoticeBannerHome";
+
 
 export default function Home() {
 
@@ -19,6 +20,8 @@ export default function Home() {
   const [ error, setError ] = useState("");
   //quick facts about the searched place
   const [ insights, setInsights ] = useState<PlaceInsights | null>(null);
+  //track state for images, name of the attraction currently hovered
+  const [ hoveredAtraction, setHoveredAtraction ] = useState<string | null>(null);
 
   //for searching attractions
   function handleSearch() {
@@ -139,12 +142,39 @@ export default function Home() {
               {results.length > 0 ? (
                 <ul className="relative border-l-2 border-dotted border-mist pl-5.5 space-y-4">
                   {results.map((attraction) => (
-                    <li key={attraction.name} className="relative">
+                    <li key={attraction.name} className="relative" 
+                        onMouseEnter={() => setHoveredAtraction(attraction.name)}
+                        onMouseLeave={() => setHoveredAtraction(null)}
+                    >
                       <span className="absolute -left-[27px] top-1.5 w-2.5 h-2.5 rounded-full bg-horizon" />
-                      <div className="max-w-xs bg-gray-50 border border-mist rounded-xl px-4 py-3 shadow-sm hover:shadow-sm transition">
-                        <p className="font-medium">{attraction.name}</p>
-                        <p className="text-sm text-ink/70 mt-2">{attraction.description}</p>
-                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="cursor-pointer flex-1 max-w-xs bg-gray-50 border border-mist rounded-xl px-4 py-3 shadow-sm hover:shadow-sm transition">
+                            <p className="font-medium">{attraction.name}</p>
+                            <p className="text-sm text-ink/70 mt-2">{attraction.description}</p>
+                        </div>
+                      
+
+                        <AnimatePresence>
+                          {hoveredAtraction === attraction.name && (
+                            <motion.div
+                              initial={{ opacity: 0, x: 12, width: 0 }}
+                              animate={{ opacity: 1, x: 0, width: 160 }}
+                              exit={{ opacity: 0, x: 12, width: 0 }}
+                              transition={{ duration: 0.3 }}
+                              className="relative shadow-lg h-30 overflow-hidden rounded-lg shrink-0"
+                            >
+                              <Image
+                                src={attraction.image}
+                                alt={attraction.name}
+                                fill
+                                sizes="160px"
+                                quality={90}
+                                className="object-cover rounded-lg"
+                              />
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                      </div>  
                     </li>
                   ))}
                 </ul>
