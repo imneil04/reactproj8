@@ -2,11 +2,23 @@
 import Image from "next/image";
 import { useState } from "react";
 import { getAttractionsFor, type Attraction } from "@/lib/mockAttractions";
-import { getInsightsFor, type PlaceInsights } from "@/lib/mockInsights";
+import { getInsightsFor, type PlaceInsights, type AttireType } from "@/lib/mockInsights";
 import { AnimatePresence, motion } from "motion/react";
 import Navigation from "@/components/Nav";
 import NoticeBanner from "./NoticeBannerHome";
 
+//lucide-react icons
+import { Shirt, Layers, Snowflake, Umbrella, Footprints, Sun, type LucideIcon } from "lucide-react";
+
+
+const ATTIRE_DISPLAY: Record<AttireType, { label: string; icon: LucideIcon }> = {
+  "light-clothing": { label: "Light, breathable clothes", icon: Shirt },
+  layers: { label: "Layers", icon: Layers },
+  "warm-coat": { label: "Warm coat", icon: Snowflake },
+  umbrella: { label: "Umbrella", icon: Umbrella },
+  "comfy-shoes": { label: "Comfy walking shoes", icon: Footprints },
+  "sun-protection": { label: "Sun protection", icon: Sun },
+};
 
 export default function Home() {
 
@@ -105,7 +117,7 @@ export default function Home() {
           {error && (
             <p className="text-sm text-sunset mt-3">{error}</p>
           )}
-
+          {/**rendering insights card (to display what to expect items) */}
           {insights && (
             <motion.div
               key={`insights-${searchedPlace}`}
@@ -125,6 +137,24 @@ export default function Home() {
                 <span className="text-horizon font-medium">Busiest period:</span>{" "}
                 {insights.busiestTime}
               </p>
+
+              <div className="pt-3 border-t border-mist">
+                <p className="text-horizon font-medium mb-2">What to pack:</p>
+                  <div className="flex flex-wrap gap-2">
+                    {insights.attire.map((item) => {
+                      const { label, icon: Icon } = ATTIRE_DISPLAY[item];
+                      return (
+                        <span
+                          key={item}
+                          className="cursor-pointer group inline-flex items-center gap-1.5 rounded-full bg-paper border border-mist px-3 py-1.5 text-xs cursor-default transition duration-200 ease-out hover:-translate-y-0.5 hover:border-horizon hover:bg-white hover:shadow-sm"
+                        >
+                          <Icon className="w-3.5 h-3.5 text-horizon transition-transform duration-200 group-hover:scale-125 group-hover:rotate-6" />
+                          {label}
+                        </span>
+                      );
+                    })}
+                  </div>
+              </div>
             </motion.div>
           )}
 
