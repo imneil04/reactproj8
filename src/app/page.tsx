@@ -2,13 +2,13 @@
 import Image from "next/image";
 import { useState } from "react";
 import { getAttractionsFor, type Attraction } from "@/lib/mockAttractions";
-import { getInsightsFor, type PlaceInsights, type AttireType } from "@/lib/mockInsights";
+import { getInsightsFor, getSeasonForMonth, SEASONS, type PlaceInsights, type AttireType, type Season } from "@/lib/mockInsights";
 import { AnimatePresence, motion } from "motion/react";
 import Navigation from "@/components/Nav";
 import NoticeBanner from "./NoticeBannerHome";
 
 //lucide-react icons
-import { Shirt, Layers, Snowflake, Umbrella, Footprints, Sun, type LucideIcon } from "lucide-react";
+import { Shirt, Layers, Snowflake, Umbrella, Footprints, Sun, Wind, Thermometer, type LucideIcon } from "lucide-react";
 
 
 const ATTIRE_DISPLAY: Record<AttireType, { label: string; icon: LucideIcon }> = {
@@ -18,6 +18,11 @@ const ATTIRE_DISPLAY: Record<AttireType, { label: string; icon: LucideIcon }> = 
   umbrella: { label: "Umbrella", icon: Umbrella },
   "comfy-shoes": { label: "Comfy walking shoes", icon: Footprints },
   "sun-protection": { label: "Sun protection", icon: Sun },
+  "light-jacket": { label: "Light jacket", icon: Wind },
+  "t-shirts": { label: "T-shirts", icon: Shirt },
+  shorts: { label: "Shorts", icon: Thermometer },
+  sweater: { label: "Sweater", icon: Shirt },
+  "scarf-gloves": { label: "Scarf & gloves", icon: Snowflake },
 };
 
 export default function Home() {
@@ -34,6 +39,8 @@ export default function Home() {
   const [ insights, setInsights ] = useState<PlaceInsights | null>(null);
   //track state for images, name of the attraction currently hovered
   const [ hoveredAtraction, setHoveredAtraction ] = useState<string | null>(null);
+  //season state
+  const [ selectedSeason, setSelectedSeason ] = useState<Season>(() => getSeasonForMonth(new Date().getMonth())); //season whose attire is shown
 
   //for searching attractions
   function handleSearch() {
@@ -137,23 +144,45 @@ export default function Home() {
                 <span className="text-horizon font-medium">Busiest period:</span>{" "}
                 {insights.busiestTime}
               </p>
-
+              {/**what to pack block */}
               <div className="pt-3 border-t border-mist">
                 <p className="text-horizon font-medium mb-2">What to pack:</p>
-                  <div className="flex flex-wrap gap-2">
-                    {insights.attire.map((item) => {
+                  <div className="flex flex-wrap gap-2 mb-3">
+                    {SEASONS.map((season) => (
+                      <button
+                        key={season.id}
+                        onClick={() => setSelectedSeason(season.id)}
+                        className={`rounded-full border px-3 py-1 text-xs cursor-pointer transition ${
+                          selectedSeason === season.id
+                            ? "bg-horizon text-white border-horizon"
+                            : "bg-white border-mist hover:border-horizon"
+                        }`}
+                      >
+                        {season.label} <span className="opacity-60">{season.range}</span>
+                      </button>
+                    ))}
+                  </div>
+                  {/**the key on the motion div remounts it on each season switch, so the pills fade in again. Same as the results and insights cards*/}
+                  <motion.div
+                    key={selectedSeason}
+                    initial={{ opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.25 }}
+                    className="flex flex-wrap gap-2"
+                  >
+                    {insights.attire[selectedSeason].map((item) => {
                       const { label, icon: Icon } = ATTIRE_DISPLAY[item];
                       return (
                         <span
                           key={item}
-                          className="cursor-pointer group inline-flex items-center gap-1.5 rounded-full bg-paper border border-mist px-3 py-1.5 text-xs cursor-default transition duration-200 ease-out hover:-translate-y-0.5 hover:border-horizon hover:bg-white hover:shadow-sm"
+                          className="group inline-flex items-center gap-1.5 rounded-full bg-paper border border-mist px-3 py-1.5 text-xs cursor-default transition duration-200 ease-out hover:-translate-y-0.5 hover:border-horizon hover:bg-white hover:shadow-sm"
                         >
                           <Icon className="w-3.5 h-3.5 text-horizon transition-transform duration-200 group-hover:scale-125 group-hover:rotate-6" />
                           {label}
                         </span>
                       );
                     })}
-                  </div>
+                  </motion.div>
               </div>
             </motion.div>
           )}
