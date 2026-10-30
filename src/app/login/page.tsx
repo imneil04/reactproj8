@@ -10,7 +10,8 @@ import { login, type LoginState } from "./actions";
 
 const initialState: LoginState = { error: null, success: false };
 
-export default function LoginPage() {
+//refractor from LoginPage so no longer page's export name
+function LoginForm() {
 
     const [ showPassword, setShowPassword ] = useState(false);
     const [ state, formAction, isPending ] = useActionState(login, initialState);
@@ -94,7 +95,6 @@ export default function LoginPage() {
 
     
   return (
-    <Suspense fallback={null}>
       <main className="mx-auto flex min-h-[70vh] max-w-sm flex-col justify-center px-6 py-16">
         <h1 className="font-[family-name:var(--font-fraunces)] text-3xl tracking-tight">
           Log in
@@ -175,6 +175,14 @@ export default function LoginPage() {
           </Link>
         </p>
       </main>
-    </Suspense>
   );
+}
+
+export default function LoginPage() {
+
+  return (
+    <Suspense fallback={null}>
+      <LoginForm />
+    </Suspense>
+  )
 }
