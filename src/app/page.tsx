@@ -1,14 +1,35 @@
 "use client"
 import Image from "next/image";
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { getAttractionsFor, type Attraction } from "@/lib/mockAttractions";
 import { getInsightsFor, getSeasonForMonth, SEASONS, type PlaceInsights, type AttireType, type Season } from "@/lib/mockInsights";
 import { AnimatePresence, motion } from "motion/react";
 import Navigation from "@/components/Nav";
 import NoticeBanner from "./NoticeBannerHome";
+import { type WeatherData } from "@/types/weather";
 
 //lucide-react icons
-import { Shirt, Layers, Snowflake, Umbrella, Footprints, Sun, Wind, Thermometer, type LucideIcon } from "lucide-react";
+import { Shirt, Layers, 
+  Snowflake, Umbrella, 
+  Footprints, Sun, 
+  Wind, Thermometer,
+  Cloud, CloudRain, CloudLightning, CloudSnow, CloudFog, Droplets, 
+  type LucideIcon } from "lucide-react";
+
+
+const WEATHER_ICONS: Record<string, LucideIcon> = {
+  Clear: Sun,
+  Clouds: Cloud,
+  Rain: CloudRain,
+  Drizzle: CloudRain,
+  Thunderstorm: CloudLightning,
+  Snow: CloudSnow,
+};
+
+function WeatherIcon({ main, className }: { main: string; className?: string }) {
+  const Icon = WEATHER_ICONS[main] ?? CloudFog; // mist, fog, haze, etc.
+  return <Icon className={className} />;
+}
 
 
 const ATTIRE_DISPLAY: Record<AttireType, { label: string; icon: LucideIcon }> = {
@@ -42,6 +63,31 @@ export default function Home() {
   //season state
   const [ selectedSeason, setSelectedSeason ] = useState<Season>(() => getSeasonForMonth(new Date().getMonth())); //season whose attire is shown
 
+  //weather state
+  const [weather, setWeather] = useState<WeatherData | null>(null);                 // current conditions + 3-day forecast
+  const [weatherStatus, setWeatherStatus] = useState<"idle" | "loading" | "error">("idle"); // fetch state for the weather block
+  const latestWeatherRequest = useRef(0);  
+
+  //new function for getting weather
+  async function fetchWeather(place: string) {
+    const requestId = ++latestWeatherRequest.current;
+    setWeather(null);
+    setWeatherStatus("loading");
+    try {
+      const res = await fetch(`/api/weather?place=${encodeURIComponent(place)}`);
+      if (!res.ok) throw new Error("Weather request failed");
+      const data: WeatherData = await res.json();
+      if (requestId !== latestWeatherRequest.current) return; // a newer search took over
+      
+      setWeather(data);
+      setWeatherStatus("idle");
+    } catch {
+      if (requestId !== latestWeatherRequest.current) return;
+      
+      setWeatherStatus("error");
+    }
+  }
+  
   //for searching attractions
   function handleSearch() {
 
@@ -56,6 +102,7 @@ export default function Home() {
     setSearchedPlace(trimmed);
     setResults(getAttractionsFor(trimmed));
     setInsights(getInsightsFor(trimmed));
+    fetchWeather(trimmed); //for weather details
   }
 
   //clear page
@@ -66,6 +113,10 @@ export default function Home() {
     setSearchedPlace("");
     setError("");
     setInsights(null);
+
+    //for weather details
+    setWeather(null);
+    setWeatherStatus("idle");
 
   }
 
@@ -144,6 +195,54 @@ export default function Home() {
                 <span className="text-horizon font-medium">Busiest period:</span>{" "}
                 {insights.busiestTime}
               </p>
+
+              {/**weather insights block */}
+              <div className="pt-3 border-t border-mist">
+                <p className="text-horizon font-medium mb-2">Weather in {searchedPlace}:</p>
+
+                {weatherStatus === "loading" && <p className="text-ink/50">Checking the skies…</p>}
+                {weatherStatus === "error" && (
+                  <p className="text-ink/50">Couldn&apos;t load the weather right now.</p>
+                )}
+
+                {weather && (
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-3">
+                      <WeatherIcon main={weather.main} className="w-8 h-8 text-horizon" />
+                      <div>
+                        <p className="font-display text-2xl leading-none">{Math.round(weather.temp)}°C</p>
+                        <p className="text-xs text-ink/60 capitalize">
+                          {weather.condition} · feels like {Math.round(weather.feelsLike)}°
+                        </p>
+                      </div>
+                      <div className="ml-auto text-xs text-ink/60 space-y-1">
+                        <p className="flex items-center gap-1.5">
+                          <Droplets className="w-3.5 h-3.5" /> {weather.humidity}%
+                        </p>
+                        <p className="flex items-center gap-1.5">
+                          <Wind className="w-3.5 h-3.5" /> {Math.round(weather.windKmh)} km/h
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-2">
+                      {weather.forecast.map((day) => (
+                        <div
+                          key={day.date}
+                          className="rounded-lg bg-paper border border-mist px-3 py-2 text-center text-xs transition hover:border-horizon"
+                        >
+                          <p className="font-medium">{day.weekday}</p>
+                          <WeatherIcon main={day.main} className="w-5 h-5 text-horizon mx-auto my-1" />
+                          <p>
+                            {Math.round(day.max)}° <span className="text-ink/50">{Math.round(day.min)}°</span>
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
               {/**what to pack block */}
               <div className="pt-3 border-t border-mist">
                 <p className="text-horizon font-medium mb-2">What to pack:</p>
