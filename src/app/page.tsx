@@ -1,13 +1,21 @@
 "use client"
 import Image from "next/image";
 import { useState, useRef } from "react";
-import { getAttractionsFor, type Attraction } from "@/lib/mockAttractions";
-import { getInsightsFor, getSeasonForMonth, SEASONS, type PlaceInsights, type AttireType, type Season } from "@/lib/mockInsights";
+//-----------------OLD IMPORTS-----------
+//removed 'getAttractionsFor' from this line to make it type-only import
+//import { type Attraction } from "@/lib/mockAttractions";
+//removed 'getInsightsFor' same ass getAttractionsFor
+//import { getSeasonForMonth, SEASONS, type PlaceInsights, type AttireType, type Season } from "@/lib/mockInsights";
+
+//------------------NEW IMPORTS----------
+import { getPlace } from "@/lib/places";
+import type { Attraction, PlaceInsights, AttireType, Season } from "@/lib/place";
+import { getSeasonForMonth, SEASONS } from "@/lib/seasons";
+//---------------------------------------
 import { AnimatePresence, motion } from "motion/react";
 import Navigation from "@/components/Nav";
 import NoticeBanner from "./NoticeBannerHome";
 import { type WeatherData } from "@/types/weather";
-
 //lucide-react icons
 import { Shirt, Layers, 
   Snowflake, Umbrella, 
@@ -68,6 +76,8 @@ export default function Home() {
   const [weatherStatus, setWeatherStatus] = useState<"idle" | "loading" | "error">("idle"); // fetch state for the weather block
   const latestWeatherRequest = useRef(0);  
 
+  const latestSearch = useRef(0);// lets us ignore response from older searches
+
   //new function for getting weather
   async function fetchWeather(place: string) {
     const requestId = ++latestWeatherRequest.current;
@@ -88,7 +98,8 @@ export default function Home() {
     }
   }
   
-  //for searching attractions
+  /** 
+  //for searching attractions, REPLACED WITH async function one
   function handleSearch() {
 
     const trimmed = query.trim();
@@ -103,6 +114,28 @@ export default function Home() {
     setResults(getAttractionsFor(trimmed));
     setInsights(getInsightsFor(trimmed));
     fetchWeather(trimmed); //for weather details
+  } */
+
+  //for attractions (refractored the old one above)
+  async function handleSearch() {
+
+    const trimmed = query.trim();
+
+    if (!trimmed) {
+      setError("Please type a place or attraction before searching.");
+      return;
+    }
+    setError("");
+
+    const requestId = ++latestSearch.current;
+    const place = await getPlace(trimmed);
+    if (requestId !== latestSearch.current) return; // a newer search took over
+
+    setSearchedPlace(place?.name ?? trimmed);
+    setResults(place?.attractions ?? []);
+    setInsights(place?.insights ?? null);
+    
+    if (place) fetchWeather(trimmed); //for weather details
   }
 
   //clear page
@@ -117,6 +150,9 @@ export default function Home() {
     //for weather details
     setWeather(null);
     setWeatherStatus("idle");
+
+    //cancels any in-flight search
+    latestSearch.current++;
 
   }
 
@@ -294,7 +330,9 @@ export default function Home() {
               transition={{ duration: 0.7, delay: 0.2 }}
               className="mt-10 text-left">
               <h2 className="font-display text-lg mb-5">
-                  Top spots in <span className="text-horizon">{searchedPlace}</span>
+                  Top spots in {" "} 
+                  <span className="text-horizon">{searchedPlace}</span>
+                  {insights && <span className="text-ink/50">, {insights.country}</span>}
               </h2>
 
               {results.length > 0 ? (
