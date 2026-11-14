@@ -12,7 +12,7 @@ import { getPlace } from "@/lib/places";
 import type { Attraction, PlaceInsights, AttireType, Season } from "@/lib/place";
 import { getSeasonForMonth, SEASONS } from "@/lib/seasons";
 //---------------------------------------
-import { AnimatePresence, motion } from "motion/react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import Navigation from "@/components/Nav";
 import NoticeBanner from "./NoticeBannerHome";
 import { type WeatherData } from "@/types/weather";
@@ -21,9 +21,8 @@ import { Shirt, Layers,
   Snowflake, Umbrella, 
   Footprints, Sun, 
   Wind, Thermometer,
-  Cloud, CloudRain, CloudLightning, CloudSnow, CloudFog, Droplets, 
+  Cloud, CloudRain, CloudLightning, CloudSnow, CloudFog, Droplets, LoaderCircle,
   type LucideIcon } from "lucide-react";
-
 
 const WEATHER_ICONS: Record<string, LucideIcon> = {
   Clear: Sun,
@@ -78,6 +77,9 @@ export default function Home() {
 
   const latestSearch = useRef(0);// lets us ignore response from older searches
 
+  // true while a search is waiting on supabase
+  const [ isSearching, setIsSearching ] = useState(false);
+
   //new function for getting weather
   async function fetchWeather(place: string) {
     const requestId = ++latestWeatherRequest.current;
@@ -126,16 +128,24 @@ export default function Home() {
       return;
     }
     setError("");
+    setIsSearching(true);
 
     const requestId = ++latestSearch.current;
-    const place = await getPlace(trimmed);
-    if (requestId !== latestSearch.current) return; // a newer search took over
+    try {
 
-    setSearchedPlace(place?.name ?? trimmed);
-    setResults(place?.attractions ?? []);
-    setInsights(place?.insights ?? null);
-    
-    if (place) fetchWeather(trimmed); //for weather details
+        const place = await getPlace(trimmed);
+        if (requestId !== latestSearch.current) return; // a newer search took over
+
+        setSearchedPlace(place?.name ?? trimmed);
+        setResults(place?.attractions ?? []);
+        setInsights(place?.insights ?? null);
+        
+        if (place) fetchWeather(trimmed); //for weather details
+      }
+    finally {
+        //only the latest search is allowed to turn the spinner off
+        if (requestId === latestSearch.current) setIsSearching(false);
+    }
   }
 
   //clear page
@@ -146,6 +156,7 @@ export default function Home() {
     setSearchedPlace("");
     setError("");
     setInsights(null);
+    setIsSearching(false);
 
     //for weather details
     setWeather(null);
@@ -191,12 +202,21 @@ export default function Home() {
               placeholder="Type a place — Tokyo, Paris, New York…"
               className="flex-1 bg-white border border-mist rounded-full px-6 py-3 placeholder:text-ink/40 focus:outline-none focus:ring-2 focus:ring-horizon transition"
             />
+            {/**items-center cursor-pointer bg-sunset text-white px-7 py-2 rounded-full font-medium hover:shadow-md hover:brightness-95 active:scale-[0.98] transition */}
             <div className="flex items-center justify-between gap-2">
               <button
                 onClick={handleSearch}
-                className="cursor-pointer bg-sunset text-white px-7 py-2 rounded-full font-medium hover:shadow-md hover:brightness-95 active:scale-[0.98] transition"
+                disabled={isSearching}
+                className="inline-flex items-center justify-center gap-2 min-w-[8rem] bg-sunset text-white px-7 py-2 rounded-full font-medium hover:brightness-95 active:scale-[0.98] transition cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
                 >
-                Check Attractions
+                  {isSearching ? (
+                    <>
+                      <LoaderCircle className="w-4 h-4 animate-spin" />
+                      Checking now...
+                    </>
+                  ) : (
+                    "Search attraction"
+                  )}
               </button>
 
               <button
