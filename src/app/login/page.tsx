@@ -161,7 +161,7 @@ function LoginForm() {
               <button
               type="submit"
               disabled={isPending || state.success}
-              className="mt-2 flex items-center justify-center rounded-full bg-[var(--color-ink,#1a1a1a)] px-4 py-3 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-70"
+              className="cursor-pointer mt-2 flex items-center justify-center rounded-full bg-[var(--color-ink,#1a1a1a)] px-4 py-3 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-70"
               >
                 {isPending ? <Loader2 size={18} className="animate-spin" /> : "Log in"}
               </button>

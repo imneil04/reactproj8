@@ -3,6 +3,8 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import FaqWidget from "@/components/FaqWidget";
 import Footer from "@/components/Footer";
+import Navigation from "../components/Nav";
+import HideOnRoutes from "@/components/HideOnRoutes";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -19,7 +21,6 @@ export const metadata: Metadata = {
   description: "Search any place and discover its top attractions.",
 };
 
-
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
@@ -27,6 +28,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col font-body bg-paper text-ink antialised">
+        <HideOnRoutes routes={["/login", "signup"]}>
+          <Navigation />
+        </HideOnRoutes>
         <main className="flex-1">{children}</main>
         <FaqWidget />
         <Footer />

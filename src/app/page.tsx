@@ -9,20 +9,24 @@ import { useState, useRef } from "react";
 
 //------------------NEW IMPORTS----------
 import { getPlace } from "@/lib/places";
-import type { Attraction, PlaceInsights, AttireType, Season } from "@/lib/place";
+import type { Attraction, PlaceInsights, AttireType, Season, PlanPlace } from "@/lib/place";
 import { getSeasonForMonth, SEASONS } from "@/lib/seasons";
+{/**react hooks */}
+import { useTripPlan, toSavedPlan } from "@/hooks/useTripPlan";
 //---------------------------------------
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import Navigation from "@/components/Nav";
+//import Navigation from "@/components/Nav";
 import NoticeBanner from "./NoticeBannerHome";
 import { type WeatherData } from "@/types/weather";
+import Link from "next/link";
+import { saveTrip } from "./trips/actions";
 //lucide-react icons
 import { Shirt, Layers, 
   Snowflake, Umbrella, 
   Footprints, Sun, 
   Wind, Thermometer,
   Cloud, CloudRain, CloudLightning, CloudSnow, CloudFog, Droplets, LoaderCircle,
-  type LucideIcon } from "lucide-react";
+  Plus, Minus, ChevronDown, X, CalendarDays, Save, type LucideIcon } from "lucide-react";
 
 const WEATHER_ICONS: Record<string, LucideIcon> = {
   Clear: Sun,
@@ -53,6 +57,12 @@ const ATTIRE_DISPLAY: Record<AttireType, { label: string; icon: LucideIcon }> = 
   "scarf-gloves": { label: "Scarf & gloves", icon: Snowflake },
 };
 
+//for saving attractions per user. Pill icon
+const pill = (active: boolean) =>
+  `rounded-full border px-2.5 py-0.5 text-xs cursor-pointer transition disabled:opacity-40 disabled:cursor-not-allowed ${
+    active ? "bg-horizon text-white border-horizon" : "bg-white border-mist hover:border-horizon"
+  }`; 
+
 export default function Home() {
 
   //current text typed in search box
@@ -79,6 +89,16 @@ export default function Home() {
 
   // true while a search is waiting on supabase
   const [ isSearching, setIsSearching ] = useState(false);
+
+  //for saving attractions or place per user
+  const plan = useTripPlan(3);                                           // the multi-city, day-by-day plan
+  // searched place, in the shape the plan stores
+  const [currentPlace, setCurrentPlace] = useState<PlanPlace | null>(null); 
+   // which day's attraction picker is open
+  const [expandedDay, setExpandedDay] = useState<number | null>(null);     
+  // save state type
+  const [ saveState, setSaveState ] = useState<"idle" | "saving" | "saved" | "updated" |"login" | "error">("idle"); 
+
 
   //new function for getting weather
   async function fetchWeather(place: string) {
@@ -139,6 +159,11 @@ export default function Home() {
         setSearchedPlace(place?.name ?? trimmed);
         setResults(place?.attractions ?? []);
         setInsights(place?.insights ?? null);
+        setCurrentPlace(
+          place
+            ? { id: place.id, name: place.name, country: place.insights.country, attractions: place.attractions }
+            : null
+        );
         
         if (place) fetchWeather(trimmed); //for weather details
       }
@@ -147,6 +172,23 @@ export default function Home() {
         if (requestId === latestSearch.current) setIsSearching(false);
     }
   }
+
+  //handler to save trips
+  async function handleSaveTrip() {
+  setSaveState("saving");
+  try {
+    const result = await saveTrip(toSavedPlan(plan.days), plan.editingTripId);
+    if (result.ok) {
+      plan.reset();
+      setExpandedDay(null);
+      setSaveState(result.mode === "updated" ? "updated" : "saved"); //set matching state
+    } else {
+      setSaveState(result.reason === "login" ? "login" : "error");
+    }
+  } catch {
+    setSaveState("error");
+  }
+}
 
   //clear page
   function handleClear() {
@@ -161,6 +203,7 @@ export default function Home() {
     //for weather details
     setWeather(null);
     setWeatherStatus("idle");
+    setCurrentPlace(null);
 
     //cancels any in-flight search
     latestSearch.current++;
@@ -169,7 +212,7 @@ export default function Home() {
 
   return (
     <>
-      <Navigation />
+      {/**<Navigation /> */}
       <main className="min-h-screen flex flex-col items-center justify-center px-6 py-20">
         <NoticeBanner />
         <div className="w-full max-w-lg text-center">
@@ -342,6 +385,202 @@ export default function Home() {
             </motion.div>
           )}
 
+          {/**trip length stepper or picker */}
+          {currentPlace && (
+            <div className="mb-5 mt-4 space-y-3">
+              <div className="flex items-center gap-3">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-horizon/10 text-horizon">
+                  <CalendarDays className="w-4 h-4" />
+                </span>
+                <div>
+                  {/**new h3 block */}
+                  <div className="flex items-center gap-3">
+                    <h3 className="font-display text-lg leading-tight">Plan your trip</h3>
+                    {plan.editingTripId && (
+                      <span className="rounded-full bg-horizon/10 px-2.5 py-0.5 text-xs text-horizon">
+                        Editing saved trip
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-xs text-ink/50">
+                    Add {currentPlace.name} to your days, then tap{" "}
+                    <span className="font-medium text-horizon">Plan on</span> under each attraction to choose its day.
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3 text-sm">
+                <span className="text-ink/60">Trip length</span>
+                <div className="inline-flex items-center rounded-full border border-mist bg-white">
+                  <button
+                    onClick={() => plan.changeLength(-1)}
+                    disabled={!plan.canRemoveDay}
+                    aria-label="Remove a day"
+                    className="p-2 rounded-full cursor-pointer transition hover:bg-paper disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
+                    <Minus className="w-3.5 h-3.5" />
+                  </button>
+                  <span className="px-2 tabular-nums">
+                    {plan.days.length} {plan.days.length === 1 ? "day" : "days"}
+                  </span>
+                  <button
+                    onClick={() => plan.changeLength(1)}
+                    disabled={!plan.canAddDay}
+                    aria-label="Add a day"
+                    className="p-2 rounded-full cursor-pointer transition hover:bg-paper disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-1.5">
+                <span className="text-xs text-ink/50">Add {currentPlace.name} to:</span>
+                {plan.days.map((day, i) => {
+                  const here = day.place?.id === currentPlace.id;
+                  const takenByOther = !!day.place && !here;
+                  return (
+                    <button
+                      key={i}
+                      onClick={() => plan.toggleCityOnDay(i, currentPlace)}
+                      disabled={takenByOther}
+                      aria-pressed={here}
+                      title={takenByOther ? `Day ${i + 1} is already set to ${day.place?.name}` : undefined}
+                      className={pill(here)}
+                    >
+                      Day {i + 1}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/**plan panel, so the user can save their trip plans (login required) */}
+          {(saveState === "saved" || saveState === "updated") && !plan.days.some((d) => d.place) && (
+            <div
+              role="status"
+              className="w-full max-w-2xl mt-12 rounded-xl border border-horizon/30 bg-horizon/5 px-5 py-4 text-left text-sm"
+            >
+              <span className="font-medium text-horizon">
+                {saveState === "updated" ? "Trip updated." : "Trip saved."}
+              </span>{" "}
+              <Link href="/dashboard" className="underline underline-offset-2">
+                View your trips
+              </Link>
+            </div>
+          )}
+
+          {plan.days.some((d) => d.place) && (
+            <section className="w-full max-w-2xl mt-12 text-left">
+              <div className="flex items-center gap-4">
+                <button
+                  onClick={() => {
+                    plan.reset();
+                    setExpandedDay(null);
+                  }}
+                  className="text-sm text-ink/50 hover:text-ink underline underline-offset-2 transition cursor-pointer"
+                >
+                  Clear plan
+                </button>
+                <button
+                  onClick={handleSaveTrip}
+                  disabled={saveState === "saving"}
+                  className="inline-flex items-center gap-1 mb-1 rounded-full bg-sunset px-5 py-1.5 text-sm font-medium text-white transition hover:brightness-95 active:scale-[0.98] cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
+                >
+                  {saveState === "saving" ? <LoaderCircle className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                  {saveState === "saving" ? "Saving…" : plan.editingTripId ? "Update trip" : "Save trip"}
+                </button>
+              </div>
+
+              {saveState === "login" && (
+                <p role="alert" className="mb-3 text-sm text-ink/70">
+                  Log in to save this trip. Your plan will be waiting when you&apos;re back.{" "}
+                  <Link href="/login" className="text-horizon underline underline-offset-2">
+                    Log in
+                  </Link>
+                </p>
+              )}
+              {saveState === "error" && (
+                <p role="alert" className="mb-3 text-sm text-sunset">
+                  Couldn&apos;t save your trip. Please try again.
+                </p>
+              )}
+              {/**planner grid list */}
+              <div className="grid gap-3 sm:grid-cols-2">
+                {plan.days.map((day, i) => (
+                  <div key={i} className="rounded-xl border border-mist bg-white px-4 py-3">
+                    <div className="flex items-center justify-between mb-1">
+                      <p className="text-horizon font-medium text-sm">Day {i + 1}</p>
+                      {day.place && (
+                        <button
+                          onClick={() => plan.clearDay(i)}
+                          aria-label={`Remove ${day.place.name} from day ${i + 1}`}
+                          className="text-ink/40 hover:text-sunset cursor-pointer transition"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </div>
+
+                    {day.place ? (
+                      <>
+                        <p className="text-sm font-medium">
+                          {day.place.name}
+                          <span className="text-ink/50 font-normal">, {day.place.country}</span>
+                        </p>
+
+                        {day.picked.length > 0 && (
+                          <ul className="mt-2 space-y-1 text-sm text-ink/70">
+                            {day.picked.map((a) => (
+                              <li key={a.id} className="flex items-center justify-between gap-2">
+                                {a.name}
+                                <button
+                                  onClick={() => plan.togglePick(i, a)}
+                                  aria-label={`Remove ${a.name} from day ${i + 1}`}
+                                  className="text-ink/40 hover:text-sunset cursor-pointer transition"
+                                >
+                                  <X className="w-3.5 h-3.5" />
+                                </button>
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+
+                        <button
+                          onClick={() => setExpandedDay(expandedDay === i ? null : i)}
+                          aria-expanded={expandedDay === i}
+                          className="mt-3 inline-flex items-center gap-1 text-xs text-horizon cursor-pointer"
+                        >
+                          {expandedDay === i ? "Hide attractions" : "Plan attractions"}
+                          <ChevronDown
+                            className={`w-3.5 h-3.5 transition-transform ${expandedDay === i ? "rotate-180" : ""}`}
+                          />
+                        </button>
+
+                        {expandedDay === i && (
+                          <div className="mt-2 flex flex-wrap gap-1.5">
+                            {day.place.attractions.map((a) => (
+                              <button
+                                key={a.id}
+                                onClick={() => plan.togglePick(i, a)}
+                                aria-pressed={day.picked.some((p) => p.id === a.id)}
+                                className={pill(day.picked.some((p) => p.id === a.id))}
+                              >
+                                {a.name}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </>
+                    ) : (
+                      <p className="text-xs text-ink/40">No city yet</p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+
           {results && (
             <motion.div
               key={`results-${searchedPlace}`} 
@@ -367,9 +606,28 @@ export default function Home() {
                         <div className="cursor-pointer flex-1 max-w-xs bg-gray-50 border border-mist rounded-xl px-4 py-3 shadow-sm hover:shadow-sm transition">
                             <p className="font-medium">{attraction.name}</p>
                             <p className="text-sm text-ink/70 mt-2">{attraction.description}</p>
+
+                            {currentPlace && plan.days.some((d) => d.place?.id === currentPlace.id) && (
+                              <div className="flex flex-wrap items-center gap-1.5 mt-3">
+                                <span className="text-xs text-ink/50">Plan on:</span>
+                                {plan.days.map((day, i) => {
+                                  if (day.place?.id !== currentPlace.id) return null;
+                                  const active = day.picked.some((a) => a.id === attraction.id);
+                                  return (
+                                    <button
+                                      key={i}
+                                      onClick={() => plan.togglePick(i, attraction)}
+                                      aria-pressed={active}
+                                      className={pill(active)}
+                                    >
+                                      Day {i + 1}
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            )}
                         </div>
                       
-
                         <AnimatePresence>
                           {hoveredAtraction === attraction.name && (
                             <motion.div

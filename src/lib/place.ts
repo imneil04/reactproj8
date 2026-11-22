@@ -1,4 +1,6 @@
 export interface Attraction {
+
+    id: string; //added 11-15-2026 for saving place or attractions per user
     name: string;
     description: string;
     image: string;
@@ -31,4 +33,19 @@ export interface PlaceInsights {
   //attire: AttireType[];
   attire: Record<Season, AttireType[]>;
 
+}
+
+//added 11-15-2026 for saving place or attractions feature per user
+export interface PlanPlace {
+
+  id: string;
+  name: string;
+  country: string;
+  attractions: Attraction[]; //snapshot taken when the city is added, so its attractions can be planned later without re-searching
+}
+
+export interface PlanDay {
+
+  place: PlanPlace | null; // which city this day is in
+  picked: Attraction[]; //optional: attractions planned for this day
 }

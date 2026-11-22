@@ -14,15 +14,15 @@ export default function NoticeBanner() {
                             </h3>
 
                             <p className="mt-2 text-sm leading-6 text-slate-700">
-                                This fictional SaaS travel recommendation web application showcases a modern website experience
-                                built with Next.js, TypeScript, Tailwind CSS, Supabase(Backend), and AI-assisted development. All generated data are mockups for the purposes of project only.
+                                This SaaS travel planner web application showcases a modern website experience
+                                built with React, Next.js, TypeScript, Tailwind CSS, Supabase(Backend), and AI-assisted development.
                             </p>
 
                             <div className="flex flex-col mt-2 text-sm leading-6 text-slate-700">
                                 <div>• Responsive Layout</div>
                                 <div>• Component-based Architecture</div>
                                 <div>• Reusable Cards</div>
-                                
+                                <div>• Modern and Simplified Trip Planning</div>
                                 <div>• API Integrations</div>
                                 <div>• Modern Component Animations</div>
                                 <div>• Authentication & RBAC Permissions</div>
